@@ -6,7 +6,7 @@
     <string>com.hyperx.control</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/aayushmali/Developer/Projects/Hyperx/hyperx-control</string>
+        <string>/usr/local/bin/hyperx-control</string>
         <string>--daemon</string>
     </array>
     <key>RunAtLoad</key>
