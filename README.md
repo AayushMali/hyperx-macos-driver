@@ -93,3 +93,4 @@ Settings are stored in `~/.config/hyperx/config.json`:
 The app uses `CGEventTap` to capture side buttons and scroll events. macOS requires Accessibility permissions:
 1. Open **System Settings** -> **Privacy & Security** -> **Accessibility**.
 2. Add and allow `Terminal` (if running via terminal) or `HyperXControl.app`.
+# hyperx-macos-driver
