@@ -24,12 +24,9 @@ class EventInterceptor {
             return false
         }
 
-        let eventMask = (1 << CGEventType.leftMouseDown.rawValue) |
-                        (1 << CGEventType.rightMouseDown.rawValue) |
-                        (1 << CGEventType.otherMouseDown.rawValue) |
+        let eventMask = (1 << CGEventType.otherMouseDown.rawValue) |
                         (1 << CGEventType.otherMouseUp.rawValue) |
-                        (1 << CGEventType.scrollWheel.rawValue) |
-                        (1 << CGEventType.mouseMoved.rawValue)
+                        (1 << CGEventType.scrollWheel.rawValue)
 
         let context = Unmanaged.passUnretained(self).toOpaque()
 
@@ -119,14 +116,6 @@ class EventInterceptor {
             }
         }
 
-        // Cursor Multiplier
-        if type == .mouseMoved && config.cursorMultiplier != 1.0 {
-            let dx = event.getDoubleValueField(.mouseEventDeltaX) * config.cursorMultiplier
-            let dy = event.getDoubleValueField(.mouseEventDeltaY) * config.cursorMultiplier
-            event.setDoubleValueField(.mouseEventDeltaX, value: dx)
-            event.setDoubleValueField(.mouseEventDeltaY, value: dy)
-        }
-
         return Unmanaged.passUnretained(event)
     }
 
@@ -201,14 +190,14 @@ class EventInterceptor {
     }
 
     private func sendKeyPress(keyCode: CGKeyCode, flags: CGEventFlags) {
-        let source = CGEventSource(stateID: .hidSystemState)
+        let source = CGEventSource(stateID: .privateState)
 
         let down = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true)
         down?.flags = flags
         down?.post(tap: .cgSessionEventTap)
 
         let up = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
-        up?.flags = flags
+        up?.flags = []
         up?.post(tap: .cgSessionEventTap)
     }
 
