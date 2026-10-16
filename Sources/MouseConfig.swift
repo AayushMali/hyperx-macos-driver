@@ -3,11 +3,13 @@ import Foundation
 enum SideButtonMode: String, Codable {
     case navigation = "navigation"
     case tabs = "tabs"
+    case segments = "segments"
     case disabled = "disabled"
 }
 
 struct MouseConfig: Codable {
     var sideButtonMode: SideButtonMode = .tabs
+    var doubleClickSegments: Bool = true
     var smoothScroll: Bool = true
     var invertScroll: Bool = false
     var scrollMultiplier: Double = 1.0
@@ -15,6 +17,7 @@ struct MouseConfig: Codable {
 
     enum CodingKeys: String, CodingKey {
         case sideButtonMode
+        case doubleClickSegments
         case smoothScroll
         case invertScroll
         case scrollMultiplier
@@ -26,6 +29,7 @@ struct MouseConfig: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.sideButtonMode = try container.decodeIfPresent(SideButtonMode.self, forKey: .sideButtonMode) ?? .tabs
+        self.doubleClickSegments = try container.decodeIfPresent(Bool.self, forKey: .doubleClickSegments) ?? true
         self.smoothScroll = try container.decodeIfPresent(Bool.self, forKey: .smoothScroll) ?? true
         self.invertScroll = try container.decodeIfPresent(Bool.self, forKey: .invertScroll) ?? false
         self.scrollMultiplier = try container.decodeIfPresent(Double.self, forKey: .scrollMultiplier) ?? 1.0

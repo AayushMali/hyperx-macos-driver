@@ -4,9 +4,11 @@ A lightweight, native macOS driver and control utility for the HyperX Pulsefire 
 
 ## Features
 
-- **Side Button Modes**:
-  - **Chrome / Browser Tab Switcher**: Switches between adjacent browser tabs (`Cmd + Option + Left/Right` Arrow) across Google Chrome, Brave, Arc, Safari, and Firefox.
+- **Side Button Modes & Segment Navigation**:
+  - **Fast Double-Click for Segment Review (`[` / `]`)**: Rapidly double-clicking the top side button sends `]` (Next Segment) and double-clicking the bottom side button sends `[` (Previous Segment) while keeping single-click for Tab Switching or History.
+  - **Chrome / Browser Tab Switcher**: Single-click switches between adjacent browser tabs (`Control + Tab` / `Control + Shift + Tab`).
   - **History Navigation**: Moves Back and Forward in browser and Finder history (`Cmd + [` and `Cmd + ]`).
+  - **Segment Review (`[` / `]` Single Click)**: Dedicated review mode where a single click directly sends `[` or `]`.
   - **Disabled**: Standard native mouse buttons 4 and 5.
 - **Cursor Acceleration Slider**: Interactive volume-style slider in the menu bar to adjust sensitivity from 0.50x to 3.00x in real time.
 - **Scroll Wheel Inversion**: Invert mouse wheel direction without affecting the MacBook trackpad natural scroll setting.
@@ -54,7 +56,7 @@ Double-click `HyperXControl.app` or launch it from terminal:
 open HyperXControl.app
 ```
 
-An `HX` icon will appear in your top menu bar with status and toggles.
+A mouse icon will appear in your top menu bar with status and toggles.
 
 ### 4. Run as Background Daemon
 
@@ -77,9 +79,8 @@ Settings are stored in `~/.config/hyperx/config.json`:
 
 ```json
 {
-  "remapSideButtons": true,
-  "sideButtonBackAction": "back",
-  "sideButtonForwardAction": "forward",
+  "sideButtonMode": "tabs",
+  "doubleClickSegments": true,
   "smoothScroll": true,
   "invertScroll": false,
   "scrollMultiplier": 1.0,

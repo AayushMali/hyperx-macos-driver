@@ -67,7 +67,9 @@ class MenuBarApp: NSObject, NSApplicationDelegate, DeviceManagerDelegate {
 
     private var tabSwitcherItem: NSMenuItem!
     private var backForwardItem: NSMenuItem!
+    private var segmentsModeItem: NSMenuItem!
     private var disableSideButtonsItem: NSMenuItem!
+    private var doubleClickSegmentsItem: NSMenuItem!
     private var invertScrollMenuItem: NSMenuItem!
     private var cursorSliderView: SliderView?
 
@@ -127,6 +129,11 @@ class MenuBarApp: NSObject, NSApplicationDelegate, DeviceManagerDelegate {
         backForwardItem.representedObject = SideButtonMode.navigation
         sideButtonsSubmenu.addItem(backForwardItem)
 
+        segmentsModeItem = NSMenuItem(title: "Segment Review ([ / ] Single Click)", action: #selector(setSideButtonMode(_:)), keyEquivalent: "")
+        segmentsModeItem.target = self
+        segmentsModeItem.representedObject = SideButtonMode.segments
+        sideButtonsSubmenu.addItem(segmentsModeItem)
+
         disableSideButtonsItem = NSMenuItem(title: "Disabled (Default Mouse Buttons)", action: #selector(setSideButtonMode(_:)), keyEquivalent: "")
         disableSideButtonsItem.target = self
         disableSideButtonsItem.representedObject = SideButtonMode.disabled
@@ -136,6 +143,12 @@ class MenuBarApp: NSObject, NSApplicationDelegate, DeviceManagerDelegate {
         menu.addItem(sideButtonsParent)
 
         updateSideButtonMenuState()
+
+        // Fast Double-Click for [ / ] Segments
+        doubleClickSegmentsItem = NSMenuItem(title: "Double-Click Side Buttons for [ / ]", action: #selector(toggleDoubleClickSegments), keyEquivalent: "")
+        doubleClickSegmentsItem.target = self
+        doubleClickSegmentsItem.state = config.doubleClickSegments ? .on : .off
+        menu.addItem(doubleClickSegmentsItem)
 
         // Invert Scroll
         invertScrollMenuItem = NSMenuItem(title: "Invert Scroll Wheel", action: #selector(toggleInvertScroll), keyEquivalent: "")
@@ -212,6 +225,7 @@ class MenuBarApp: NSObject, NSApplicationDelegate, DeviceManagerDelegate {
     private func updateSideButtonMenuState() {
         tabSwitcherItem.state = (config.sideButtonMode == .tabs) ? .on : .off
         backForwardItem.state = (config.sideButtonMode == .navigation) ? .on : .off
+        segmentsModeItem.state = (config.sideButtonMode == .segments) ? .on : .off
         disableSideButtonsItem.state = (config.sideButtonMode == .disabled) ? .on : .off
     }
 
@@ -238,6 +252,13 @@ class MenuBarApp: NSObject, NSApplicationDelegate, DeviceManagerDelegate {
         guard let mode = sender.representedObject as? SideButtonMode else { return }
         config.sideButtonMode = mode
         updateSideButtonMenuState()
+        eventInterceptor.config = config
+        config.save()
+    }
+
+    @objc private func toggleDoubleClickSegments() {
+        config.doubleClickSegments.toggle()
+        doubleClickSegmentsItem.state = config.doubleClickSegments ? .on : .off
         eventInterceptor.config = config
         config.save()
     }

@@ -9,6 +9,11 @@ class EventInterceptor {
     private var runLoopSource: CFRunLoopSource?
     var config: MouseConfig
 
+    private var pendingClickWorkItem: DispatchWorkItem?
+    private var lastSideButtonIsForward: Bool?
+    private var lastSideButtonClickTime: TimeInterval = 0
+    private let doubleClickThreshold: TimeInterval = 0.25
+
     init(config: MouseConfig) {
         self.config = config
     }
@@ -55,6 +60,9 @@ class EventInterceptor {
     }
 
     func stop() {
+        pendingClickWorkItem?.cancel()
+        pendingClickWorkItem = nil
+
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             if let source = runLoopSource {
@@ -77,12 +85,12 @@ class EventInterceptor {
         if type == .otherMouseDown || type == .otherMouseUp {
             let buttonNumber = event.getIntegerValueField(.mouseEventButtonNumber)
 
-            if config.sideButtonMode != .disabled && (buttonNumber == 3 || buttonNumber == 4 || buttonNumber == 5) {
+            if (config.sideButtonMode != .disabled || config.doubleClickSegments) &&
+               (buttonNumber == 3 || buttonNumber == 4 || buttonNumber == 5) {
                 if type == .otherMouseDown {
                     let isForward = (buttonNumber == 4 || buttonNumber == 5)
                     DispatchQueue.main.async { [weak self] in
-                        guard let self = self else { return }
-                        self.triggerSideButtonAction(isForward: isForward)
+                        self?.handleSideButtonPress(isForward: isForward)
                     }
                 }
                 return nil
@@ -122,10 +130,57 @@ class EventInterceptor {
         return Unmanaged.passUnretained(event)
     }
 
+    private func handleSideButtonPress(isForward: Bool) {
+        if !config.doubleClickSegments {
+            triggerSideButtonAction(isForward: isForward)
+            return
+        }
+
+        let now = ProcessInfo.processInfo.systemUptime
+
+        // Fast double-click on the same side button triggers [ or ] segment move
+        if let lastForward = lastSideButtonIsForward,
+           lastForward == isForward,
+           (now - lastSideButtonClickTime) <= doubleClickThreshold,
+           pendingClickWorkItem != nil {
+            pendingClickWorkItem?.cancel()
+            pendingClickWorkItem = nil
+            lastSideButtonIsForward = nil
+            lastSideButtonClickTime = 0
+
+            triggerSegmentKey(isForward: isForward)
+            return
+        }
+
+        // Flush any pending single-click on the opposite side button
+        if let pending = pendingClickWorkItem, let lastForward = lastSideButtonIsForward {
+            pending.cancel()
+            pendingClickWorkItem = nil
+            triggerSideButtonAction(isForward: lastForward)
+        }
+
+        lastSideButtonIsForward = isForward
+        lastSideButtonClickTime = now
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            self.pendingClickWorkItem = nil
+            self.lastSideButtonIsForward = nil
+            self.triggerSideButtonAction(isForward: isForward)
+        }
+        pendingClickWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + doubleClickThreshold, execute: workItem)
+    }
+
+    private func triggerSegmentKey(isForward: Bool) {
+        // [ is 0x21 (previous segment), ] is 0x1E (next segment)
+        let keyCode: CGKeyCode = isForward ? 0x1E : 0x21
+        sendKeyPress(keyCode: keyCode, flags: [])
+    }
+
     private func triggerSideButtonAction(isForward: Bool) {
         switch config.sideButtonMode {
         case .tabs:
-            // Control + Tab (Next Tab) and Control + Shift + Tab (Previous Tab)
             let tabKeyCode: CGKeyCode = 0x30
             var flags: CGEventFlags = .maskControl
             if !isForward {
@@ -134,9 +189,11 @@ class EventInterceptor {
             sendKeyPress(keyCode: tabKeyCode, flags: flags)
 
         case .navigation:
-            // Cmd + [ (Back) and Cmd + ] (Forward)
             let keyCode: CGKeyCode = isForward ? 0x1E : 0x21
             sendKeyPress(keyCode: keyCode, flags: .maskCommand)
+
+        case .segments:
+            triggerSegmentKey(isForward: isForward)
 
         case .disabled:
             break
